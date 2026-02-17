@@ -1,0 +1,25 @@
+{
+  "name": "daily-smart-dashboard",
+  "version": "1.0.0",
+  "description": "Personal dashboard for calendars, todos, and emails from Gmail and Outlook",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "googleapis": "^128.0.0",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "isomorphic-fetch": "^3.0.0",
+    "dotenv": "^16.3.1",
+    "express-session": "^1.17.3",
+    "cookie-parser": "^1.4.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
