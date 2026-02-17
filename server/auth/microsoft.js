@@ -1,9 +1,11 @@
 const { Client } = require('@microsoft/microsoft-graph-client');
 
+const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'https://daily-smart-dashboard.vercel.app/auth/microsoft/callback';
+
 const config = {
   clientId: process.env.MICROSOFT_CLIENT_ID,
   clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-  redirectUri: process.env.MICROSOFT_REDIRECT_URI,
+  redirectUri: redirectUri,
   authority: 'https://login.microsoftonline.com/common',
   scopes: [
     'User.Read',
