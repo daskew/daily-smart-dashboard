@@ -131,4 +131,64 @@ router.get('/', async (req, res) => {
   res.json(results);
 });
 
+// Get list of available Google calendars
+router.get('/google/calendars', async (req, res) => {
+  if (!req.session.googleTokens) {
+    return res.status(401).json({ error: 'Not authenticated with Google' });
+  }
+
+  try {
+    const auth = googleAuth.getAuthenticatedClient(req.session.googleTokens);
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    const response = await calendar.calendarList.list();
+
+    res.json({
+      calendars: response.data.items.map(cal => ({
+        id: cal.id,
+        summary: cal.summary,
+        primary: cal.primary || false,
+        backgroundColor: cal.backgroundColor
+      }))
+    });
+  } catch (error) {
+    console.error('Google Calendar List error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get events from a specific Google calendar
+router.get('/google/:calendarId', async (req, res) => {
+  if (!req.session.googleTokens) {
+    return res.status(401).json({ error: 'Not authenticated with Google' });
+  }
+
+  try {
+    const auth = googleAuth.getAuthenticatedClient(req.session.googleTokens);
+    const calendar = google.calendar({ version: 'v3', auth });
+    const { calendarId } = req.params;
+
+    const now = new Date().toISOString();
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const response = await calendar.events.list({
+      calendarId: decodeURIComponent(calendarId),
+      timeMin: now,
+      timeMax: endOfDay.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 10
+    });
+
+    res.json({
+      calendarId,
+      events: response.data.items
+    });
+  } catch (error) {
+    console.error('Google Calendar error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

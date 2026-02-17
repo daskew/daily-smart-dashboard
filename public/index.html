@@ -97,6 +97,69 @@
       padding: 0.5rem 1rem;
       font-size: 0.9rem;
     }
+    
+    .calendar-manager {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .calendar-manager h4 {
+      margin-bottom: 0.75rem;
+      color: #333;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .calendar-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .calendar-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #eee;
+    }
+    .calendar-item label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      flex: 1;
+    }
+    .calendar-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .calendar-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .add-calendar-btn {
+      background: #28a745;
+      color: white;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      margin-top: 0.75rem;
+    }
+    .event-calendar-tag {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      margin-left: 0.5rem;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -124,6 +187,14 @@
       <!-- Calendar Card -->
       <div class="card">
         <h3><span class="card-icon">📅</span> Today's Calendar</h3>
+        
+        <!-- Calendar Manager -->
+        <div class="calendar-manager" id="calendar-manager" style="display: none;">
+          <h4>📆 My Calendars</h4>
+          <div class="calendar-list" id="available-calendars"></div>
+          <button class="btn add-calendar-btn" onclick="loadAvailableCalendars()">+ Add Calendar</button>
+        </div>
+        
         <button class="btn refresh-btn" onclick="loadCalendar()">Refresh</button>
         <div id="calendar-content">
           <div class="empty-state">Connect an account to see calendar events</div>
@@ -150,6 +221,9 @@
   </div>
   
   <script>
+    // Store selected calendars in localStorage
+    let selectedCalendars = JSON.parse(localStorage.getItem('selectedCalendars') || '["primary"]');
+    
     // Check auth status on load
     async function checkAuth() {
       // In a real app, you'd check session status from the server
@@ -168,30 +242,128 @@
       window.location.href = '/api/microsoft/login';
     }
     
+    async function loadAvailableCalendars() {
+      const container = document.getElementById('available-calendars');
+      container.innerHTML = '<div class="loading">Loading calendars...</div>';
+      
+      try {
+        const response = await fetch('/api/calendar/google/calendars');
+        if (!response.ok) {
+          container.innerHTML = '<div class="empty-state">Connect Google first</div>';
+          return;
+        }
+        
+        const data = await response.json();
+        
+        if (!data.calendars || data.calendars.length === 0) {
+          container.innerHTML = '<div class="empty-state">No calendars found</div>';
+          return;
+        }
+        
+        // Show calendar manager
+        document.getElementById('calendar-manager').style.display = 'block';
+        
+        container.innerHTML = data.calendars.map(cal => `
+          <div class="calendar-item">
+            <label>
+              <input type="checkbox" 
+                value="${cal.id}" 
+                ${selectedCalendars.includes(cal.id) ? 'checked' : ''}
+                onchange="toggleCalendar('${cal.id}')">
+              <span class="calendar-color" style="background-color: ${cal.backgroundColor || '#4285f4'}"></span>
+              <span>${cal.summary}${cal.primary ? ' ⭐' : ''}</span>
+            </label>
+          </div>
+        `).join('');
+        
+        // Reload events with selected calendars
+        loadCalendar();
+      } catch (error) {
+        container.innerHTML = '<div class="empty-state">Error loading calendars</div>';
+      }
+    }
+    
+    function toggleCalendar(calendarId) {
+      const index = selectedCalendars.indexOf(calendarId);
+      if (index > -1) {
+        selectedCalendars = selectedCalendars.filter(id => id !== calendarId);
+      } else {
+        selectedCalendars.push(calendarId);
+      }
+      localStorage.setItem('selectedCalendars', JSON.stringify(selectedCalendars));
+      loadCalendar();
+    }
+    
     async function loadCalendar() {
       const content = document.getElementById('calendar-content');
       content.innerHTML = '<div class="loading">Loading calendar...</div>';
       
       try {
-        const response = await fetch('/api/calendar');
-        const data = await response.json();
+        const allEvents = [];
         
-        if (data.errors && data.errors.length > 0) {
-          content.innerHTML = '<div class="empty-state">Error loading calendar. Reconnect your account.</div>';
-          return;
+        // Load from primary Google calendar
+        if (selectedCalendars.includes('primary')) {
+          const response = await fetch('/api/calendar/google');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.events) {
+              allEvents.push(...data.events.map(e => ({ ...e, source: 'Google', color: '#4285f4' })));
+            }
+          }
         }
         
-        const events = [...(data.google || []), ...(data.microsoft || [])];
+        // Load from selected additional calendars
+        for (const calId of selectedCalendars) {
+          if (calId !== 'primary') {
+            const response = await fetch(`/api/calendar/google/${encodeURIComponent(calId)}`);
+            if (response.ok) {
+              const data = await response.json();
+              if (data.events) {
+                allEvents.push(...data.events.map(e => ({ 
+                  ...e, 
+                  source: data.calendarId,
+                  color: '#667eea'
+                })));
+              }
+            }
+          }
+        }
         
-        if (events.length === 0) {
+        // Also try Microsoft
+        try {
+          const msResponse = await fetch('/api/calendar/microsoft');
+          if (msResponse.ok) {
+            const data = await msResponse.json();
+            if (data.events) {
+              allEvents.push(...data.events.map(e => ({ 
+                ...e, 
+                title: e.title,
+                start: e.start,
+                end: e.end,
+                source: 'Outlook',
+                color: '#00a4ef'
+              })));
+            }
+          }
+        } catch (e) { /* Microsoft not connected */ }
+        
+        // Sort by start time
+        allEvents.sort((a, b) => {
+          const aTime = a.start?.dateTime || a.start?.date || '';
+          const bTime = b.start?.dateTime || b.start?.date || '';
+          return new Date(aTime) - new Date(bTime);
+        });
+        
+        if (allEvents.length === 0) {
           content.innerHTML = '<div class="empty-state">No events scheduled for today</div>';
           return;
         }
         
-        content.innerHTML = events.map(event => `
+        content.innerHTML = allEvents.map(event => `
           <div class="event-item">
             <div class="event-time">${formatTime(event.start?.dateTime || event.start?.date)}</div>
-            <div class="event-title">${event.summary || event.subject || 'Untitled'}</div>
+            <div class="event-title">${event.summary || event.subject || event.title || 'Untitled'}</div>
+            ${event.source ? `<span class="event-calendar-tag" style="background-color: ${event.color}">${event.source}</span>` : ''}
           </div>
         `).join('');
       } catch (error) {
