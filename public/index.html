@@ -221,21 +221,34 @@
   </div>
   
   <script>
-    // Store selected calendars in localStorage
+    // Store tokens in localStorage
+    let googleToken = localStorage.getItem('google_token') || null;
     let selectedCalendars = JSON.parse(localStorage.getItem('selectedCalendars') || '["primary"]');
     
-    // Check auth status on load
+    // Check auth status on load - handle token from callback
     async function checkAuth() {
-      // In a real app, you'd check session status from the server
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('auth')) {
+      
+      // Handle token from OAuth callback
+      if (urlParams.get('auth') === 'google' && urlParams.get('token')) {
+        googleToken = urlParams.get('token');
+        localStorage.setItem('google_token', googleToken);
+        // Clean URL
+        window.history.replaceState({}, document.title, '/');
+      }
+      
+      if (googleToken) {
         loadCalendar();
         loadEmails();
       }
     }
     
     function connectGoogle() {
-      window.location.href = '/api/gmail/login';
+      window.location.href = '/auth/google';
+    }
+    
+    function getAuthHeader() {
+      return googleToken ? `Bearer ${googleToken}` : '';
     }
     
     function connectMicrosoft() {
@@ -295,6 +308,11 @@
     }
     
     async function loadCalendar() {
+      if (!googleToken) {
+        document.getElementById('calendar-content').innerHTML = '<div class="empty-state">Connect Google to see calendar</div>';
+        return;
+      }
+      
       const content = document.getElementById('calendar-content');
       content.innerHTML = '<div class="loading">Loading calendar...</div>';
       
@@ -303,7 +321,7 @@
         
         // Load from primary Google calendar
         if (selectedCalendars.includes('primary')) {
-          const response = await fetch('/api/calendar/google');
+          const response = await fetch(`/api/calendar/google?token=${googleToken}`);
           if (response.ok) {
             const data = await response.json();
             if (data.events) {
@@ -372,11 +390,16 @@
     }
     
     async function loadEmails() {
+      if (!googleToken) {
+        document.getElementById('email-content').innerHTML = '<div class="empty-state">Connect Gmail to see emails</div>';
+        return;
+      }
+      
       const content = document.getElementById('email-content');
       content.innerHTML = '<div class="loading">Loading emails...</div>';
       
       try {
-        const response = await fetch('/api/gmail/emails');
+        const response = await fetch(`/api/gmail/emails?token=${googleToken}`);
         if (!response.ok) {
           content.innerHTML = '<div class="empty-state">Connect Gmail to see emails</div>';
           return;

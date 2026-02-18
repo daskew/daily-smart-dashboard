@@ -1,9 +1,9 @@
+const fs = require('fs');
+const path = require('path');
+
 module.exports = (req, res) => {
-  res.status(200).json({ 
-    message: 'API working!',
-    env: {
-      hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
-      hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET
-    }
-  });
+  const htmlPath = path.join(__dirname, 'public', 'index.html');
+  const html = fs.readFileSync(htmlPath, 'utf8');
+  res.setHeader('Content-Type', 'text/html');
+  res.status(200).send(html);
 };
