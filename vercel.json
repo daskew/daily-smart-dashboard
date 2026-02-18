@@ -12,6 +12,9 @@
   ],
   "routes": [
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/api/auth/google",
       "dest": "/api/auth/google/index.js"
     },
@@ -32,12 +35,8 @@
       "dest": "/api/auth/google/callback.js"
     },
     {
-      "src": "/auth/(.*)",
-      "dest": "/api/auth/$1"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/public/$1"
     }
   ]
 }
