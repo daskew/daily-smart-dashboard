@@ -14,6 +14,22 @@
       "use": "@vercel/node"
     },
     {
+      "src": "api/auth/login.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/auth/signup.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/auth/logout.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/accounts/index.js",
+      "use": "@vercel/node"
+    },
+    {
       "src": "api/gmail/emails.js",
       "use": "@vercel/node"
     },
@@ -30,6 +46,22 @@
     {
       "src": "/api",
       "dest": "/api/index.js"
+    },
+    {
+      "src": "/api/auth/login",
+      "dest": "/api/auth/login.js"
+    },
+    {
+      "src": "/api/auth/signup",
+      "dest": "/api/auth/signup.js"
+    },
+    {
+      "src": "/api/auth/logout",
+      "dest": "/api/auth/logout.js"
+    },
+    {
+      "src": "/api/accounts",
+      "dest": "/api/accounts/index.js"
     },
     {
       "src": "/api/gmail/emails",
