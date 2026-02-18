@@ -2,7 +2,23 @@
   "version": 2,
   "builds": [
     {
-      "src": "api/**/*.js",
+      "src": "api/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/auth/google/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/auth/google/callback.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/gmail/emails.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "api/calendar/google/index.js",
       "use": "@vercel/node"
     },
     {
@@ -12,7 +28,16 @@
   ],
   "routes": [
     {
-      "handle": "filesystem"
+      "src": "/api",
+      "dest": "/api/index.js"
+    },
+    {
+      "src": "/api/gmail/emails",
+      "dest": "/api/gmail/emails.js"
+    },
+    {
+      "src": "/api/calendar/google",
+      "dest": "/api/calendar/google/index.js"
     },
     {
       "src": "/api/auth/google",
@@ -21,10 +46,6 @@
     {
       "src": "/api/auth/google/callback",
       "dest": "/api/auth/google/callback.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
     },
     {
       "src": "/auth/google",
