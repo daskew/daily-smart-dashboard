@@ -1,21 +1,22 @@
 const { Client } = require('@microsoft/microsoft-graph-client');
 
-const redirectUri = process.env.MICROSOFT_REDIRECT_URI || 'https://daily-smart-dashboard.vercel.app/auth/microsoft/callback';
-
-const config = {
-  clientId: process.env.MICROSOFT_CLIENT_ID,
-  clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-  redirectUri: redirectUri,
-  authority: 'https://login.microsoftonline.com/common',
-  scopes: [
-    'User.Read',
-    'Mail.Read',
-    'Calendars.Read'
-  ]
-};
+function getConfig() {
+  return {
+    clientId: process.env.MICROSOFT_CLIENT_ID,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+    redirectUri: process.env.MICROSOFT_REDIRECT_URI || 'https://daily-smart-dashboard.vercel.app/auth/microsoft/callback',
+    authority: 'https://login.microsoftonline.com/common',
+    scopes: [
+      'User.Read',
+      'Mail.Read',
+      'Calendars.Read'
+    ]
+  };
+}
 
 // Generate auth URL
 function getAuthUrl() {
+  const config = getConfig();
   const params = new URLSearchParams({
     client_id: config.clientId,
     response_type: 'code',
@@ -28,6 +29,7 @@ function getAuthUrl() {
 
 // Exchange code for tokens
 async function getTokens(code) {
+  const config = getConfig();
   const params = new URLSearchParams({
     client_id: config.clientId,
     client_secret: config.clientSecret,
