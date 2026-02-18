@@ -12,8 +12,24 @@
   ],
   "routes": [
     {
+      "src": "/api/auth/google",
+      "dest": "/api/auth/google/index.js"
+    },
+    {
+      "src": "/api/auth/google/callback",
+      "dest": "/api/auth/google/callback.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/$1"
+    },
+    {
+      "src": "/auth/google",
+      "dest": "/api/auth/google/index.js"
+    },
+    {
+      "src": "/auth/google/callback",
+      "dest": "/api/auth/google/callback.js"
     },
     {
       "src": "/auth/(.*)",
