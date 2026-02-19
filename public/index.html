@@ -587,19 +587,19 @@
       loadConnectedAccounts();
     }
 
-    async function saveConnectedAccount(provider, token) {
+    async function saveConnectedAccount(provider, accessToken) {
       if (!session) return;
 
-      const token = session.access_token;
+      const authToken = session.access_token;
       await fetch('/api/accounts', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           provider,
-          access_token: token,
+          access_token: accessToken,
           refresh_token: ''
         })
       });
