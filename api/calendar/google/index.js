@@ -1,4 +1,5 @@
 const { google } = require('googleapis');
+const { createClient } = require('@supabase/supabase-js');
 
 function getOAuth2Client() {
   return new google.auth.OAuth2(
@@ -17,15 +18,47 @@ function decodeTokens(encoded) {
 }
 
 module.exports = async (req, res) => {
-  const token = req.query.token || req.headers.authorization?.replace('Bearer ', '');
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Not authenticated with Google' });
+  const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+  );
+
+  // Get user from authorization header
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
-  const tokens = decodeTokens(token);
+  const token = authHeader.replace('Bearer ', '');
+  
+  // Verify token and get user
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  
+  if (authError || !user) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+
+  // Get Google connected account for this user
+  const { data: accounts, error: accountError } = await supabase
+    .from('connected_accounts')
+    .select('access_token, refresh_token, expires_at')
+    .eq('user_id', user.id)
+    .eq('provider', 'google')
+    .limit(1);
+
+  if (accountError || !accounts || accounts.length === 0) {
+    return res.status(401).json({ error: 'Google account not connected' });
+  }
+
+  const googleToken = accounts[0].access_token;
+  
+  if (!googleToken) {
+    return res.status(401).json({ error: 'No Google token found' });
+  }
+
+  const tokens = decodeTokens(googleToken);
   if (!tokens) {
-    return res.status(401).json({ error: 'Invalid tokens' });
+    return res.status(401).json({ error: 'Invalid Google tokens' });
   }
 
   try {

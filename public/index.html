@@ -694,7 +694,9 @@
 
         // Load from primary Google calendar
         if (selectedCalendars.includes('primary')) {
-          const response = await fetch(`/api/calendar/google?token=${session.access_token}`);
+          const response = await fetch('/api/calendar/google', {
+            headers: { 'Authorization': `Bearer ${session.access_token}` }
+          });
           if (response.ok) {
             const data = await response.json();
             if (data.events) {
@@ -706,7 +708,9 @@
         // Load from selected additional calendars
         for (const calId of selectedCalendars) {
           if (calId !== 'primary') {
-            const response = await fetch(`/api/calendar/google/${encodeURIComponent(calId)}`);
+            const response = await fetch(`/api/calendar/google/${encodeURIComponent(calId)}`, {
+              headers: { 'Authorization': `Bearer ${session.access_token}` }
+            });
             if (response.ok) {
               const data = await response.json();
               if (data.events) {
@@ -772,7 +776,9 @@
       content.innerHTML = '<div class="loading">Loading emails...</div>';
       
       try {
-        const response = await fetch(`/api/gmail/emails?token=${session.access_token}`);
+        const response = await fetch('/api/gmail/emails', {
+          headers: { 'Authorization': `Bearer ${session.access_token}` }
+        });
         if (!response.ok) {
           content.innerHTML = '<div class="empty-state">Connect Gmail to see emails</div>';
           return;
