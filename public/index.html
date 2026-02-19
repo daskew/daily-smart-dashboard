@@ -404,6 +404,10 @@
     session = getLocalStorage('supabase_session', null);
     selectedCalendars = getLocalStorage('selectedCalendars', ["primary"]);
 
+    // Test that JavaScript is working
+    console.log('JavaScript loaded successfully');
+    console.log('showLoginModal function:', typeof showLoginModal);
+
     // Check auth status on load
     async function checkAuth() {
       try {
@@ -436,19 +440,25 @@
     function showLoginModal() {
       console.log('showLoginModal called');
       const modal = document.getElementById('auth-modal');
-      console.log('Modal element:', modal);
       if (modal) {
+        // Use inline styles to ensure it shows
+        modal.style.display = 'flex';
         modal.classList.add('active');
         isLoginMode = true;
         updateAuthModal();
       } else {
-        alert('Modal not found!');
+        alert('Modal not found! Please check console.');
       }
     }
 
     function closeAuthModal() {
-      document.getElementById('auth-modal').classList.remove('active');
-      document.getElementById('auth-error').textContent = '';
+      const modal = document.getElementById('auth-modal');
+      if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+      }
+      const errorEl = document.getElementById('auth-error');
+      if (errorEl) errorEl.textContent = '';
     }
 
     function toggleAuthMode() {
