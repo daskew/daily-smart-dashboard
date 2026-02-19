@@ -434,9 +434,16 @@
 
     // Auth Modal Functions
     function showLoginModal() {
-      document.getElementById('auth-modal').classList.add('active');
-      isLoginMode = true;
-      updateAuthModal();
+      console.log('showLoginModal called');
+      const modal = document.getElementById('auth-modal');
+      console.log('Modal element:', modal);
+      if (modal) {
+        modal.classList.add('active');
+        isLoginMode = true;
+        updateAuthModal();
+      } else {
+        alert('Modal not found!');
+      }
     }
 
     function closeAuthModal() {
