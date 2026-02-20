@@ -7,12 +7,12 @@ module.exports = async (req, res) => {
   );
 
   // Debug: Log environment (don't log actual values)
+  console.log('API Request:', req.method);
   console.log('SUPABASE_URL set:', !!process.env.SUPABASE_URL);
-  console.log('SUPABASE_ANON_KEY set:', !!process.env.SUPABASE_ANON_KEY);
   
   // Get user from token
   const authHeader = req.headers.authorization;
-  console.log('Auth header:', authHeader ? authHeader.substring(0, 30) + '...' : 'none');
+  console.log('Auth header present:', !!authHeader);
   
   if (!authHeader) {
     return res.status(401).json({ error: 'No authorization header' });
@@ -20,14 +20,13 @@ module.exports = async (req, res) => {
 
   const token = authHeader.replace('Bearer ', '');
   console.log('Token length:', token.length);
-  console.log('Token starts with:', token.substring(0, 20));
   
   try {
     // Verify token and get user
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError) {
-      console.log('Auth error:', authError);
+      console.log('Auth error:', authError.message);
       return res.status(401).json({ error: 'Invalid token: ' + authError.message });
     }
     
@@ -37,25 +36,66 @@ module.exports = async (req, res) => {
     }
     
     console.log('User authenticated:', user.email);
-    
-    // Get all connected accounts for user
-    const { data, error } = await supabase
-      .from('connected_accounts')
-      .select('*')
-      .eq('user_id', user.id);
 
-    if (error) {
-      return res.status(400).json({ error: error.message });
+    if (req.method === 'GET') {
+      // Get all connected accounts for user
+      const { data, error } = await supabase
+        .from('connected_accounts')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+
+      console.log('Found accounts:', data?.length || 0);
+
+      // Don't return actual tokens, just provider info
+      const accounts = data.map(acc => ({
+        id: acc.id,
+        provider: acc.provider,
+        connected_at: acc.created_at
+      }));
+
+      return res.json({ accounts });
     }
 
-    // Don't return actual tokens, just provider info
-    const accounts = data.map(acc => ({
-      id: acc.id,
-      provider: acc.provider,
-      connected_at: acc.created_at
-    }));
+    if (req.method === 'POST') {
+      const { provider, provider_user_id, access_token, refresh_token, expires_at } = req.body;
 
-    return res.json({ accounts });
+      console.log('Saving account for user:', user.id, 'provider:', provider);
+
+      // Store the connected account
+      const { data, error } = await supabase
+        .from('connected_accounts')
+        .insert({
+          user_id: user.id,
+          provider,
+          provider_user_id,
+          access_token,
+          refresh_token,
+          expires_at
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.log('Insert error:', error.message);
+        return res.status(400).json({ error: error.message });
+      }
+
+      console.log('Account saved:', data.id);
+
+      return res.json({ 
+        account: {
+          id: data.id,
+          provider: data.provider,
+          connected_at: data.created_at
+        }
+      });
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' });
   } catch (err) {
     console.log('Exception:', err.message);
     return res.status(500).json({ error: err.message });
