@@ -421,9 +421,13 @@
       // Handle token from OAuth callback
       if (urlParams.get('auth') === 'google' && urlParams.get('token')) {
         const token = urlParams.get('token');
+        console.log('OAuth callback received, token present:', !!token);
         // Store in DB if logged in
         if (session) {
+          console.log('Session exists, saving connected account');
           await saveConnectedAccount('google', token);
+        } else {
+          console.log('No session when handling OAuth callback');
         }
         // Clean URL
         window.history.replaceState({}, document.title, '/');
@@ -554,8 +558,11 @@
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
+      console.log('loadConnectedAccounts response:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('Connected accounts:', data);
         const accountsList = document.getElementById('accounts-list');
 
         if (data.accounts && data.accounts.length > 0) {
@@ -588,10 +595,15 @@
     }
 
     async function saveConnectedAccount(provider, accessToken) {
-      if (!session) return;
+      if (!session) {
+        console.log('No session, cannot save account');
+        return;
+      }
 
+      console.log('Saving connected account:', provider, accessToken ? 'has token' : 'no token');
+      
       const authToken = session.access_token;
-      await fetch('/api/accounts', {
+      const response = await fetch('/api/accounts', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -603,6 +615,11 @@
           refresh_token: ''
         })
       });
+      
+      console.log('Save account response:', response.status);
+      const result = await response.json();
+      console.log('Save account result:', result);
+      
       loadConnectedAccounts();
     }
 
