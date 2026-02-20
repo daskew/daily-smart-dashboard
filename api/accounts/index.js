@@ -6,20 +6,34 @@ module.exports = async (req, res) => {
     process.env.SUPABASE_ANON_KEY
   );
 
+  // Debug: Log what we received
+  console.log('API Request:', req.method);
+  console.log('Auth header present:', !!req.headers.authorization);
+
   // Get user from token
   const authHeader = req.headers.authorization;
   if (!authHeader) {
+    console.log('No authorization header');
     return res.status(401).json({ error: 'No authorization header' });
   }
 
   const token = authHeader.replace('Bearer ', '');
+  console.log('Token length:', token.length);
   
   // Verify token and get user
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
   
-  if (authError || !user) {
+  if (authError) {
+    console.log('Auth error:', authError.message);
+    return res.status(401).json({ error: 'Invalid token: ' + authError.message });
+  }
+  
+  if (!user) {
+    console.log('No user found');
     return res.status(401).json({ error: 'Invalid token' });
   }
+  
+  console.log('User authenticated:', user.email);
 
   if (req.method === 'GET') {
     // Get all connected accounts for user

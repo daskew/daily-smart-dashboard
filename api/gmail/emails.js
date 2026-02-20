@@ -23,13 +23,17 @@ module.exports = async (req, res) => {
     process.env.SUPABASE_ANON_KEY
   );
 
+  console.log('Gmail API called');
+  
   // Get user from authorization header
   const authHeader = req.headers.authorization;
   if (!authHeader) {
+    console.log('No auth header');
     return res.status(401).json({ error: 'Not authenticated' });
   }
 
   const token = authHeader.replace('Bearer ', '');
+  console.log('Token present:', !!token);
   
   // Verify token and get user
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);

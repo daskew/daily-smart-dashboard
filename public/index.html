@@ -551,11 +551,20 @@
     }
 
     async function loadConnectedAccounts() {
-      if (!session) return;
+      if (!session) {
+        console.log('No session in loadConnectedAccounts');
+        return;
+      }
 
+      console.log('Session:', session ? 'exists' : 'null');
+      console.log('Session access_token:', session.access_token ? 'present' : 'missing');
+      
       const token = session.access_token;
       const response = await fetch('/api/accounts', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
 
       console.log('loadConnectedAccounts response:', response.status);
