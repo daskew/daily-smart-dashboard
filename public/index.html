@@ -558,6 +558,7 @@
 
       console.log('Session:', session ? 'exists' : 'null');
       console.log('Session access_token:', session.access_token ? 'present' : 'missing');
+      console.log('Token preview:', session.access_token ? session.access_token.substring(0, 50) + '...' : 'none');
       
       const token = session.access_token;
       const response = await fetch('/api/accounts', {
